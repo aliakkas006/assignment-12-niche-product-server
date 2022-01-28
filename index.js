@@ -2,7 +2,7 @@ const express = require('express');
 const app = express();
 const cors = require('cors')
 require('dotenv').config();
-const { MongoClient } = require('mongodb');
+const { MongoClient, ObjectId } = require('mongodb');
 
 const port = process.env.PORT || 5000;
 
@@ -17,7 +17,11 @@ async function run() {
         await client.connect();
 
         const database = client.db("by_cycle_shop");
+
         const usersCollection = database.collection("users");
+        const productsCollection = database.collection("products");
+        const reviewsCollection = database.collection("reviews");
+        const ordersCollection = database.collection("orders");
 
         app.get('/users/:email', async (req, res) => {
             const email = req.params.email;
@@ -32,9 +36,45 @@ async function run() {
             res.send({ admin: isAdmin });
         });
 
+        app.get('/products', async (req, res) => {
+            const cursor = await productsCollection.find({});
+            const products = await cursor.toArray();
+            res.send(products);
+        });
+
+        app.get('/orders', async (req, res) => {
+            const cursor = await ordersCollection.find({});
+            const orders = await cursor.toArray();
+            res.send(orders);
+        });
+
+        app.get('/review', async (req, res) => {
+            const cursor = await reviewsCollection.find({});
+            const reviews = await cursor.toArray();
+            res.send(reviews);
+        });
+
         app.post('/users', async (req, res) => {
             const user = req.body;
             const result = await usersCollection.insertOne(user);
+            res.send(result);
+        });
+
+        app.post('/products', async (req, res) => {
+            const product = req.body;
+            const result = await productsCollection.insertOne(product);
+            res.send(result);
+        });
+
+        app.post('/orders', async (req, res) => {
+            const order = req.body;
+            const result = await ordersCollection.insertOne(order);
+            res.send(result);
+        });
+
+        app.post('/review', async (req, res) => {
+            const review = req.body;
+            const result = await reviewsCollection.insertOne(review);
             res.send(result);
         });
 
@@ -45,7 +85,12 @@ async function run() {
             const updateDoc = { $set: { role: 'admin' } };
             const result = await usersCollection.updateOne(filter, updateDoc);
             res.send(result);
-        })
+        });
+
+        app.delete('/orders/:id', async (req, res) => {
+            const result = await ordersCollection.deleteOne({ _id: ObjectId(req.params.id) });
+            res.send(result);
+        });
 
     } finally {
         // await client.close();
